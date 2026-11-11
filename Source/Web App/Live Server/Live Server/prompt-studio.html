@@ -1,0 +1,669 @@
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--bg2:#10101a;--bg3:#16162a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --accent:#c084fc;--accent2:#818cf8;--accent3:#34d399;
+  --text:#f1f0ff;--muted:#6b6b8a;--muted2:#9090b0;--danger:#f87171;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(192,132,252,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(192,132,252,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.logo{display:flex;flex-direction:column;gap:4px}
+.logo-eyebrow{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase}
+.logo-title{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.02em}
+.logo-title span{color:var(--accent)}
+.status-pill{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 14px;border:1px solid var(--border);border-radius:4px;background:var(--bg2)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.3s}
+.dot.ok{background:var(--accent3);box-shadow:0 0 6px var(--accent3)}
+.dot.err{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.dot.sending{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 0.6s ease infinite}
+.comfy-status{cursor:pointer;transition:border-color 0.2s}
+.comfy-status:hover{border-color:var(--border2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeUp 0.3s ease forwards}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.col-full{grid-column:1/-1}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.panel-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase}
+.panel-badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(192,132,252,0.1);color:var(--accent);border:1px solid rgba(192,132,252,0.2)}
+.panel-body{padding:1.25rem}
+.prompt-textarea{width:100%;background:transparent;border:none;outline:none;resize:none;color:var(--text);font-family:var(--sans);font-size:15px;font-weight:300;line-height:1.7;min-height:100px}
+.prompt-textarea::placeholder{color:var(--muted)}
+.prompt-hint{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);font-family:var(--mono)}
+.prompt-hint-example{color:var(--accent2);cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:10px 20px;border-radius:5px;border:none;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#0a0a0f}
+.btn-primary:hover:not(:disabled){background:#d8b4fe}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover:not(:disabled){background:var(--bg3);border-color:var(--accent);color:var(--accent)}
+.btn-success{background:var(--accent3);color:#0a0a0f}
+.btn-success:hover:not(:disabled){background:#6ee7b7}
+.btn-row{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
+.keywords-grid{display:flex;flex-direction:column;gap:12px}
+.keyword-group{display:flex;flex-direction:column;gap:6px}
+.keyword-group-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase}
+.keyword-tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:4px;border:1px solid;cursor:default;transition:all 0.15s;user-select:none}
+.tag-style{background:rgba(129,140,248,0.08);color:#a5b4fc;border-color:rgba(129,140,248,0.25)}
+.tag-color{background:rgba(192,132,252,0.08);color:#e9d5ff;border-color:rgba(192,132,252,0.25)}
+.tag-material{background:rgba(52,211,153,0.08);color:#6ee7b7;border-color:rgba(52,211,153,0.25)}
+.tag-mood{background:rgba(251,191,36,0.08);color:#fde68a;border-color:rgba(251,191,36,0.25)}
+.tag-remove{width:14px;height:14px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:10px;line-height:1;cursor:pointer;opacity:0.5}
+.tag-remove:hover{opacity:1;background:rgba(255,255,255,0.1)}
+.tag-add-input{font-family:var(--mono);font-size:11px;background:transparent;border:1px dashed var(--border2);border-radius:4px;color:var(--muted2);padding:5px 10px;outline:none;width:100px;transition:all 0.15s}
+.tag-add-input:focus{border-color:var(--accent);color:var(--text);width:140px}
+.tag-add-input::placeholder{color:var(--muted)}
+.texture-preview{aspect-ratio:1;border-radius:6px;overflow:hidden;position:relative;background:var(--bg3);border:1px solid var(--border)}
+.texture-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.texture-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--bg3)}
+.texture-loading-text{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.texture-loading-sub{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:0.6}
+.spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+.texture-meta{font-family:var(--mono);font-size:10px;color:var(--muted);word-break:break-all;margin-top:8px;padding:8px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)}
+.comfy-config{display:flex;gap:8px;align-items:center;margin-bottom:10px;padding:10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);flex-wrap:wrap}
+.comfy-config label{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap}
+.comfy-config input,.comfy-config select{font-family:var(--mono);font-size:11px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted2);border-radius:4px;padding:4px 8px;outline:none}
+.comfy-config input:focus,.comfy-config select:focus{border-color:var(--accent);color:var(--text)}
+.shader-grid{display:flex;flex-direction:column;gap:14px}
+.shader-row{display:flex;flex-direction:column;gap:6px}
+.shader-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted2)}
+.shader-label span:last-child{color:var(--text)}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:var(--bg3);border-radius:999px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg2);cursor:pointer}
+.osc-log{background:var(--bg);border-radius:6px;padding:12px;height:140px;overflow-y:auto;font-family:var(--mono);font-size:11px;line-height:1.8;border:1px solid var(--border)}
+.osc-log::-webkit-scrollbar{width:4px}
+.osc-log::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.log-line{display:flex;gap:12px}
+.log-time{color:var(--muted);min-width:60px}
+.log-msg{color:var(--accent3)}
+.log-msg.err{color:var(--danger)}
+.log-msg.info{color:var(--muted2)}
+.log-msg.send{color:var(--accent)}
+.steps{display:flex;align-items:center;gap:0;margin-bottom:2rem;font-family:var(--mono);font-size:11px}
+.step{display:flex;align-items:center;gap:8px;padding:6px 14px;color:var(--muted);border:1px solid var(--border);background:var(--bg2)}
+.step:first-child{border-radius:5px 0 0 5px}
+.step:last-child{border-radius:0 5px 5px 0}
+.step+.step{border-left:none}
+.step.active{color:var(--accent);border-color:rgba(192,132,252,0.3);background:rgba(192,132,252,0.06)}
+.step.done{color:var(--accent3);border-color:rgba(52,211,153,0.2)}
+.step-num{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;border:1px solid currentColor;flex-shrink:0}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:2.5rem;color:var(--muted);font-family:var(--mono);font-size:11px;text-align:center}
+.empty-icon{font-size:28px;opacity:0.3}
+.error-box{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:5px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--danger);margin-top:10px}
+.info-box{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:5px;padding:8px 14px;font-family:var(--mono);font-size:10px;color:var(--accent3);margin-bottom:8px;line-height:1.6}
+</style>
+
+<div class="app" id="app">
+  <div class="header">
+    <div class="logo">
+      <span class="logo-eyebrow">BioniAR // v0.2</span>
+      <span class="logo-title">Prompt <span>Studio</span></span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+      <div class="status-pill comfy-status" onclick="pingComfyUI()" title="Click to check connection">
+        <div class="dot" id="comfyDot"></div>
+        <span id="comfyStatusText">ComfyUI — checking...</span>
+      </div>
+      <div class="status-pill">
+        <div class="dot" id="oscDot"></div>
+        <span id="oscStatusText">OSC — not connected</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input id="oscHost" placeholder="127.0.0.1" style="font-family:var(--mono);font-size:11px;background:var(--bg2);border:1px solid var(--border);color:var(--muted2);border-radius:4px;padding:4px 8px;width:100px;outline:none;"/>
+        <input id="oscPort" placeholder="9000" style="font-family:var(--mono);font-size:11px;background:var(--bg2);border:1px solid var(--border);color:var(--muted2);border-radius:4px;padding:4px 8px;width:60px;outline:none;"/>
+        <button class="btn btn-secondary" onclick="toggleOSC()" id="oscBtn" style="padding:4px 12px;font-size:11px;">connect</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step active" id="step1"><div class="step-num">1</div>Prompt</div>
+    <div class="step" id="step2"><div class="step-num">2</div>Keywords</div>
+    <div class="step" id="step3"><div class="step-num">3</div>Texture</div>
+    <div class="step" id="step4"><div class="step-num">4</div>Send to TD</div>
+  </div>
+
+  <div class="grid" style="margin-bottom:1.5rem;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-label">Character prompt</span>
+        <span class="panel-badge" id="charCount">0 chars</span>
+      </div>
+      <div class="panel-body">
+        <textarea class="prompt-textarea" id="promptInput" rows="5" placeholder="Describe a character or concept..."></textarea>
+        <div class="prompt-hint">
+          <span>try:</span>
+          <span class="prompt-hint-example" onclick="setExample('Angel Dust from Hazbin Hotel')">Angel Dust</span>
+          <span class="prompt-hint-example" onclick="setExample('Alastor from Hazbin Hotel')">Alastor</span>
+          <span class="prompt-hint-example" onclick="setExample('Daft Punk robot helmet')">Daft Punk</span>
+        </div>
+        <div id="extractError"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="extractKeywords()" id="extractBtn"><span>extract keywords</span><span>→</span></button>
+          <button class="btn btn-secondary" onclick="clearAll()">clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-label">Extracted keywords</span>
+        <span class="panel-badge" id="kwCount">—</span>
+      </div>
+      <div class="panel-body" id="keywordsPanel">
+        <div class="empty"><div class="empty-icon">◈</div><span>keywords appear here after extraction</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-bottom:1.5rem;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-label">Generated texture</span>
+        <span class="panel-badge" id="texBadge">—</span>
+      </div>
+      <div class="panel-body">
+        <div class="comfy-config">
+          <label>ComfyUI</label>
+          <input id="comfyHost" value="dracu0mc.ddns.net" style="width:130px;" onchange="COMFY.host=this.value"/>
+          <input id="comfyPort" value="45892" style="width:60px;" onchange="COMFY.port=this.value"/>
+          <label>Steps</label>
+          <input id="comfySteps" type="number" value="12" min="4" max="60" style="width:52px;" onchange="COMFY.steps=parseInt(this.value)"/>
+          <label>Size</label>
+          <select id="comfySize" style="width:90px;" onchange="COMFY.size=parseInt(this.value)">
+            <option value="512" selected>512×512</option>
+            <option value="768">768×768</option>
+            <option value="1024">1024×1024</option>
+          </select>
+        </div>
+        <div class="info-box">Using server workflow: <strong>UNETLoader</strong> (flux1-dev) + EmptySD3LatentImage + ConditioningZeroOut — matches your ComfyUI setup.</div>
+        <div id="textureArea">
+          <div class="empty"><div class="empty-icon">◧</div><span>texture generates after keyword review</span></div>
+        </div>
+        <div id="genError"></div>
+        <div class="btn-row" id="genBtnRow">
+          <button class="btn btn-primary" onclick="generateTexture()" id="genBtn" disabled><span>generate texture</span><span>↻</span></button>
+          <button class="btn btn-secondary" onclick="generateTexture()" id="regenBtn" style="display:none;">regen ↻</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-label">Shader parameters</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">sent via OSC</span>
+      </div>
+      <div class="panel-body">
+        <div class="shader-grid" id="shaderGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel col-full">
+    <div class="panel-header">
+      <span class="panel-label">OSC output log</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success" onclick="sendToTD()" id="sendBtn" disabled style="padding:5px 16px;font-size:11px;">send to touchdesigner ↗</button>
+        <button class="btn btn-secondary" onclick="downloadTexture()" id="dlBtn" disabled style="padding:5px 12px;font-size:11px;">⬇ save image</button>
+        <button class="btn btn-secondary" onclick="clearLog()" style="padding:5px 12px;font-size:11px;">clear log</button>
+      </div>
+    </div>
+    <div class="panel-body" style="padding:0.75rem 1.25rem;">
+      <div class="osc-log" id="oscLog">
+        <div class="log-line"><span class="log-time">00:00.0</span><span class="log-msg info">Prompt Studio v0.2 ready — using server-matched Flux workflow.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GROQ_API_KEY = "";
+
+const COMFY = {
+  host: 'dracu0mc.ddns.net',
+  port: '45892',
+  steps: 12,
+  size: 512,
+  get baseUrl() { return `http://${this.host}:${this.port}`; }
+};
+
+const state = {
+  prompt: '',
+  keywords: { style:[], color:[], material:[], mood:[], motif:[] },
+  textureUrl: null,
+  textureFilename: null,
+  shaders: { glow:0.6, roughness:0.3, metallic:0.8, opacity:1.0, hue_shift:0.0 },
+  oscConnected: false,
+  step: 1
+};
+
+// ── Workflow builder — matches your Server_Workflow.json exactly ──────────────
+function buildWorkflow(texturePrompt) {
+  const seed = Math.floor(Math.random() * 999999999999999);
+  const sz = COMFY.size;
+  return {
+    "206": {
+      "class_type": "SaveImage",
+      "inputs": { "filename_prefix": "PromptStudio", "images": ["207:204", 0] }
+    },
+    "207:39": {
+      "class_type": "VAELoader",
+      "inputs": { "vae_name": "ae.safetensors" }
+    },
+    "207:38": {
+      "class_type": "UNETLoader",
+      "inputs": { "unet_name": "flux1-dev.safetensors", "weight_dtype": "default" }
+    },
+    "207:40": {
+      "class_type": "DualCLIPLoader",
+      "inputs": {
+        "clip_name1": "clip_l.safetensors",
+        "clip_name2": "t5xxl_fp8_e4m3fn.safetensors",
+        "type": "flux",
+        "device": "default"
+      }
+    },
+    "207:27": {
+      "class_type": "EmptySD3LatentImage",
+      "inputs": { "width": sz, "height": sz, "batch_size": 1 }
+    },
+    "207:45": {
+      "class_type": "CLIPTextEncode",
+      "inputs": { "text": texturePrompt, "clip": ["207:40", 0] }
+    },
+    "207:42": {
+      "class_type": "ConditioningZeroOut",
+      "inputs": { "conditioning": ["207:45", 0] }
+    },
+    "207:31": {
+      "class_type": "KSampler",
+      "inputs": {
+        "seed": seed,
+        "steps": COMFY.steps,
+        "cfg": 1,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 1,
+        "model": ["207:38", 0],
+        "positive": ["207:45", 0],
+        "negative": ["207:42", 0],
+        "latent_image": ["207:27", 0]
+      }
+    },
+    "207:204": {
+      "class_type": "VAEDecode",
+      "inputs": { "samples": ["207:31", 0], "vae": ["207:39", 0] }
+    }
+  };
+}
+
+// ── ComfyUI ping ──────────────────────────────────────────────────────────────
+async function pingComfyUI() {
+  const dot = document.getElementById('comfyDot');
+  const txt = document.getElementById('comfyStatusText');
+  dot.className = 'dot'; txt.textContent = 'ComfyUI — checking...';
+  try {
+    const res = await fetch(`${COMFY.baseUrl}/system_stats`, { mode:'cors', signal:AbortSignal.timeout(4000) });
+    if (res.ok) {
+      dot.className = 'dot ok'; txt.textContent = 'ComfyUI — connected ✓';
+      log('msg', `ComfyUI reachable at ${COMFY.baseUrl}`);
+    } else throw new Error(`HTTP ${res.status}`);
+  } catch(e) {
+    try {
+      const r2 = await fetch(`${COMFY.baseUrl}/prompt`, { mode:'cors', method:'GET', signal:AbortSignal.timeout(2000) });
+      if (r2.ok || r2.status === 405) {
+        dot.className = 'dot ok'; txt.textContent = 'ComfyUI — connected ✓';
+        log('msg', `ComfyUI reachable at ${COMFY.baseUrl}`); return;
+      }
+    } catch(_) {}
+    dot.className = 'dot err'; txt.textContent = 'ComfyUI — not reachable';
+    log('err', `ComfyUI not reachable (${e.message})`);
+  }
+}
+
+// ── OSC ───────────────────────────────────────────────────────────────────────
+let ws = null;
+function toggleOSC() {
+  if (state.oscConnected) { disconnectOSC(); return; }
+  const host = document.getElementById('oscHost').value || '127.0.0.1';
+  const port = document.getElementById('oscPort').value || '9000';
+  log('info', `Connecting OSC at ws://${host}:${port}...`);
+  try {
+    ws = new WebSocket(`ws://${host}:${port}`);
+    ws.onopen = () => { state.oscConnected = true; updateOSCStatus(true); log('msg', `Connected to TD at ${host}:${port}`); document.getElementById('oscBtn').textContent = 'disconnect'; };
+    ws.onerror = () => { log('err', `Could not reach ws://${host}:${port} — log-only mode`); state.oscConnected = 'logonly'; updateOSCStatus('logonly'); document.getElementById('oscBtn').textContent = 'disconnect'; };
+    ws.onclose = () => { if (state.oscConnected !== false) { log('info','OSC closed'); state.oscConnected = false; updateOSCStatus(false); document.getElementById('oscBtn').textContent = 'connect'; } };
+  } catch(e) { log('err','WebSocket error: '+e.message); }
+}
+function disconnectOSC() {
+  if (ws) ws.close();
+  state.oscConnected = false; updateOSCStatus(false);
+  document.getElementById('oscBtn').textContent = 'connect';
+  log('info','Disconnected from OSC');
+}
+function updateOSCStatus(s) {
+  const dot = document.getElementById('oscDot'); const txt = document.getElementById('oscStatusText');
+  if (s === true) { dot.className = 'dot ok'; txt.textContent = 'OSC — connected'; }
+  else if (s === 'logonly') { dot.className = 'dot sending'; txt.textContent = 'OSC — log-only mode'; }
+  else { dot.className = 'dot'; txt.textContent = 'OSC — not connected'; }
+}
+function sendOSC(address, value) {
+  const payload = { address, args:[value] };
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(payload));
+  log('send', `${address} → ${JSON.stringify([value])}`);
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function log(type, msg) {
+  const el = document.getElementById('oscLog');
+  const now = new Date();
+  const t = `${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}.${Math.floor(now.getMilliseconds()/100)}`;
+  const line = document.createElement('div'); line.className = 'log-line';
+  const cls = type==='err'?'err':type==='send'?'send':type==='msg'?'msg':'info';
+  line.innerHTML = `<span class="log-time">${t}</span><span class="log-msg ${cls}">${msg}</span>`;
+  el.appendChild(line); el.scrollTop = el.scrollHeight;
+}
+function clearLog() { document.getElementById('oscLog').innerHTML = ''; log('info','Log cleared.'); }
+
+// ── Steps ─────────────────────────────────────────────────────────────────────
+function setStep(n) {
+  state.step = n;
+  for (let i=1;i<=4;i++) {
+    document.getElementById('step'+i).className = 'step'+(i<n?' done':i===n?' active':'');
+  }
+}
+
+// ── Char counter ──────────────────────────────────────────────────────────────
+document.getElementById('promptInput').addEventListener('input', function() {
+  state.prompt = this.value;
+  document.getElementById('charCount').textContent = this.value.length+' chars';
+});
+function setExample(txt) {
+  document.getElementById('promptInput').value = txt;
+  state.prompt = txt;
+  document.getElementById('charCount').textContent = txt.length+' chars';
+}
+
+// ── Extract keywords via Groq ─────────────────────────────────────────────────
+async function searchCharacterInfo(query) {
+  try {
+    const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+    const data = await res.json();
+    const parts = [];
+    if (data.AbstractText) parts.push(data.AbstractText);
+    if (data.RelatedTopics) data.RelatedTopics.slice(0,3).forEach(t => { if(t.Text) parts.push(t.Text); });
+    return parts.join(' ') || '';
+  } catch(e) { return ''; }
+}
+
+async function extractKeywords() {
+  const prompt = document.getElementById('promptInput').value.trim();
+  if (!prompt) { showError('extractError','Enter a character or concept first.'); return; }
+  clearError('extractError');
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true; btn.innerHTML = '<span>searching...</span>';
+  log('info', `Searching: "${prompt}"...`);
+  try {
+    const searchInfo = await searchCharacterInfo(prompt);
+    btn.innerHTML = '<span>extracting features...</span>';
+    const userContent = searchInfo
+      ? `Character/concept: "${prompt}"\n\nResearch:\n${searchInfo}\n\nExtract texture keywords from these visual features.`
+      : `Character/concept: "${prompt}"\n\nExtract texture keywords based on your knowledge.`;
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ_API_KEY}`},
+      body: JSON.stringify({
+        model:"llama-3.1-8b-instant", temperature:0.2,
+        messages:[{
+          role:"system",
+          content:`You are a texture artist. Extract visual keywords for a seamless tileable texture. Return ONLY valid JSON:
+{"style":[],"color":[],"material":[],"mood":[],"motif":[]}`
+        },{role:"user",content:userContent}]
+      })
+    });
+    const data = await res.json();
+    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("No content. "+JSON.stringify(data));
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const kw = JSON.parse(clean);
+    state.keywords = kw;
+    renderKeywords();
+    document.getElementById('genBtn').disabled = false;
+    document.getElementById('kwCount').textContent = Object.values(kw).flat().length+' tags';
+    setStep(2);
+    log('msg', `Extracted ${Object.values(kw).flat().length} keywords`);
+  } catch(e) {
+    showError('extractError','Groq extraction failed: '+e.message);
+    log('err','Groq error: '+e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<span>extract keywords</span><span>→</span>';
+  }
+}
+
+// ── Render keywords ───────────────────────────────────────────────────────────
+function renderKeywords() {
+  const panel = document.getElementById('keywordsPanel');
+  const cats = ['motif','style','color','material','mood'];
+  panel.innerHTML = '<div class="keywords-grid fade-in">'+
+    cats.map(cat => `<div class="keyword-group">
+      <div class="keyword-group-label">${cat}</div>
+      <div class="keyword-tags" id="tags-${cat}">
+        ${(state.keywords[cat]||[]).map(k=>tagHTML(cat,k)).join('')}
+        <input class="tag-add-input" placeholder="+ add" onkeydown="addTag(event,'${cat}',this)"/>
+      </div></div>`).join('')+'</div>';
+}
+const tagColors = {style:'tag-style',color:'tag-color',material:'tag-material',mood:'tag-mood'};
+function tagHTML(cat,k) {
+  return `<span class="tag ${tagColors[cat]||'tag-style'}">${k.replace(/_/g,' ')}<span class="tag-remove" onclick="removeTag('${cat}','${k}')">✕</span></span>`;
+}
+function removeTag(cat,k) { state.keywords[cat]=state.keywords[cat].filter(x=>x!==k); renderKeywords(); updateKwCount(); }
+function addTag(e,cat,input) {
+  if (e.key==='Enter' && input.value.trim()) {
+    const val = input.value.trim().replace(/\s+/g,'_');
+    if (!state.keywords[cat]) state.keywords[cat]=[];
+    state.keywords[cat].push(val); renderKeywords(); updateKwCount();
+  }
+}
+function updateKwCount() { document.getElementById('kwCount').textContent=Object.values(state.keywords).flat().length+' tags'; }
+
+// ── Poll for image ────────────────────────────────────────────────────────────
+async function pollForImage(promptId) {
+  const maxWait = 300000; const interval = 2500; const start = Date.now();
+  while (Date.now()-start < maxWait) {
+    await new Promise(r=>setTimeout(r,interval));
+    try {
+      const res = await fetch(`${COMFY.baseUrl}/history/${promptId}`,{mode:'cors'});
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data[promptId]?.outputs) {
+        for (const nodeId of Object.keys(data[promptId].outputs)) {
+          const node = data[promptId].outputs[nodeId];
+          if (node.images?.length > 0) {
+            const img = node.images[0];
+            state.textureFilename = img.filename;
+            const url = `${COMFY.baseUrl}/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder||'')}&type=${img.type||'output'}`;
+            log('info',`Image ready: ${img.filename}`);
+            return url;
+          }
+        }
+      }
+    } catch(e) { log('info',`Polling... (${e.message})`); }
+    log('info',`Waiting... ${Math.round((Date.now()-start)/1000)}s`);
+  }
+  throw new Error('Timed out (5 min).');
+}
+
+// ── Generate texture ──────────────────────────────────────────────────────────
+async function generateTexture() {
+  clearError('genError');
+  const allTags = Object.values(state.keywords).flat();
+  if (!allTags.length) { showError('genError','No keywords to generate from.'); return; }
+
+  const motifs = (state.keywords.motif||[]).join(', ');
+  const colors = (state.keywords.color||[]).join(', ');
+  const mats   = (state.keywords.material||[]).join(', ');
+  const styles = (state.keywords.style||[]).join(', ');
+  const moods  = (state.keywords.mood||[]).join(', ');
+
+  const texturePrompt = [
+    motifs ? `seamless tileable pattern featuring ${motifs}` : 'seamless tileable texture',
+    mats   ? `on a ${mats} surface` : '',
+    colors ? `in ${colors} tones` : '',
+    styles, moods,
+    'highly detailed', 'ornate', 'decorative pattern', '4k', 'professional texture art',
+    'no text', 'no watermark'
+  ].filter(Boolean).join(', ');
+
+  const sz = COMFY.size;
+  log('info', `Queueing job — flux1-dev [UNETLoader] ${sz}×${sz} ${COMFY.steps} steps`);
+  log('info', `Prompt: "${texturePrompt.slice(0,80)}..."`);
+
+  document.getElementById('textureArea').innerHTML = `
+    <div class="texture-preview">
+      <div class="texture-loading">
+        <div class="spinner"></div>
+        <div class="texture-loading-text">generating via ComfyUI (Flux Dev)</div>
+        <div class="texture-loading-sub" id="genStatus">queuing job...</div>
+      </div>
+    </div>`;
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('regenBtn').style.display = 'none';
+  document.getElementById('texBadge').textContent = 'generating...';
+  setStep(3);
+
+  try {
+    const workflow = buildWorkflow(texturePrompt);
+    const apiRes = await fetch(`${COMFY.baseUrl}/prompt`, {
+      method:'POST', mode:'cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt: workflow })
+    });
+    if (!apiRes.ok) {
+      let errMsg = `HTTP ${apiRes.status}`;
+      try { const ed = await apiRes.json(); errMsg = ed.error?.message || ed.error || errMsg; } catch(_) {}
+      throw new Error(errMsg);
+    }
+    const data = await apiRes.json();
+    const promptId = data.prompt_id;
+    if (!promptId) throw new Error('No prompt_id returned: '+JSON.stringify(data));
+    log('msg',`Job queued: ${promptId}`);
+    const sEl = document.getElementById('genStatus');
+    if (sEl) sEl.textContent = 'Flux generating (may take ~30-60s)...';
+
+    const imageUrl = await pollForImage(promptId);
+    state.textureUrl = imageUrl;
+
+    document.getElementById('textureArea').innerHTML = `
+      <div class="texture-preview fade-in">
+        <img src="${imageUrl}" alt="Generated texture" crossorigin="anonymous"/>
+      </div>
+      <div class="texture-meta">flux1-dev · UNETLoader · ${sz}×${sz} · ${COMFY.steps} steps · euler/simple</div>`;
+    document.getElementById('texBadge').textContent = `${sz}×${sz}`;
+    document.getElementById('regenBtn').style.display = 'inline-flex';
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('dlBtn').disabled = false;
+    log('msg','Texture ready!');
+    setStep(4); inferShaders();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('textureArea').innerHTML = `<div class="empty"><div class="empty-icon">◧</div><span>generation failed</span></div>`;
+    showError('genError',`Error: ${e.message}`);
+    log('err',`ComfyUI error: ${e.message}`);
+    document.getElementById('genBtn').disabled = false;
+    document.getElementById('texBadge').textContent = 'error';
+  }
+}
+
+// ── Shaders ───────────────────────────────────────────────────────────────────
+function inferShaders() {
+  const all = Object.values(state.keywords).flat().join(' ').toLowerCase();
+  const s = state.shaders;
+  s.glow      = all.match(/glow|neon|luminous|light|radiant|electric/) ? 0.85 : 0.4;
+  s.metallic  = all.match(/metal|chrome|steel|iron|gold|silver|mech/)  ? 0.9  : 0.3;
+  s.roughness = all.match(/rough|worn|dirty|matte|fabric|cloth/) ? 0.8 :
+                all.match(/smooth|silk|glass|polished|shiny/)    ? 0.1 : 0.4;
+  s.hue_shift = all.match(/pink|magenta/) ? 0.95 : all.match(/red/)  ? 0.02 :
+                all.match(/blue/)         ? 0.6  : all.match(/green/) ? 0.35 :
+                all.match(/gold|yellow/)  ? 0.13 : 0.0;
+  renderShaders();
+}
+function renderShaders() {
+  const params = [
+    {key:'glow',label:'Glow intensity',color:'#c084fc'},
+    {key:'metallic',label:'Metallic',color:'#818cf8'},
+    {key:'roughness',label:'Roughness',color:'#34d399'},
+    {key:'opacity',label:'Opacity',color:'#fbbf24'},
+    {key:'hue_shift',label:'Hue shift',color:'#f87171'}
+  ];
+  document.getElementById('shaderGrid').innerHTML = params.map(p=>`
+    <div class="shader-row">
+      <div class="shader-label"><span>${p.label}</span><span id="sv-${p.key}">${state.shaders[p.key].toFixed(2)}</span></div>
+      <input type="range" min="0" max="1" step="0.01" value="${state.shaders[p.key]}"
+        style="accent-color:${p.color}"
+        oninput="updateShader('${p.key}',parseFloat(this.value))"/>
+    </div>`).join('');
+}
+function updateShader(key,val) { state.shaders[key]=val; document.getElementById('sv-'+key).textContent=val.toFixed(2); }
+renderShaders();
+
+// ── Download ──────────────────────────────────────────────────────────────────
+async function downloadTexture() {
+  if (!state.textureUrl) { log('err','No texture to download.'); return; }
+  try {
+    const res = await fetch(state.textureUrl,{mode:'cors'});
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = state.textureFilename || 'texture.png';
+    a.click(); URL.revokeObjectURL(a.href);
+    log('msg',`Downloaded: ${a.download}`);
+  } catch(e) { log('err','Download failed: '+e.message); }
+}
+
+// ── Send to TD ────────────────────────────────────────────────────────────────
+function sendToTD() {
+  if (!state.textureUrl) { log('err','No texture generated yet.'); return; }
+  document.getElementById('oscDot').className = 'dot sending';
+  log('info','── Sending to TouchDesigner ──');
+  sendOSC('/bioniar/texture/url', state.textureUrl);
+  if (state.textureFilename) sendOSC('/bioniar/texture/filename', state.textureFilename);
+  Object.entries(state.keywords).forEach(([cat,tags]) => sendOSC(`/bioniar/keywords/${cat}`,tags.join(',')));
+  Object.entries(state.shaders).forEach(([k,v]) => sendOSC(`/bioniar/shader/${k}`,v));
+  sendOSC('/bioniar/apply',1);
+  setTimeout(() => {
+    document.getElementById('oscDot').className = state.oscConnected===true ? 'dot ok' : 'dot';
+    log('msg','All OSC messages sent.');
+  }, 800);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function clearAll() {
+  document.getElementById('promptInput').value='';
+  document.getElementById('charCount').textContent='0 chars';
+  state.prompt=''; state.keywords={style:[],color:[],material:[],mood:[],motif:[]};
+  state.textureUrl=null; state.textureFilename=null;
+  document.getElementById('keywordsPanel').innerHTML='<div class="empty"><div class="empty-icon">◈</div><span>keywords appear here after extraction</span></div>';
+  document.getElementById('textureArea').innerHTML='<div class="empty"><div class="empty-icon">◧</div><span>texture generates after keyword review</span></div>';
+  document.getElementById('kwCount').textContent='—';
+  document.getElementById('texBadge').textContent='—';
+  document.getElementById('genBtn').disabled=true;
+  document.getElementById('sendBtn').disabled=true;
+  document.getElementById('dlBtn').disabled=true;
+  document.getElementById('regenBtn').style.display='none';
+  clearError('extractError'); clearError('genError');
+  setStep(1); log('info','Cleared.');
+}
+function showError(id,msg) { document.getElementById(id).innerHTML=`<div class="error-box">${msg}</div>`; }
+function clearError(id) { document.getElementById(id).innerHTML=''; }
+
+pingComfyUI();
+</script>
